@@ -182,3 +182,23 @@ let arr = [
 2. element-UI 交互界面
 3. 插件
 4. mock.js 模拟数据
+
+git 提交规范
+检查仓库状态，是否有未提交的文件
+
+```
+git status
+```
+
+提交代码
+
+```
+git add .
+git commit -m "更新README.md和package-lock.json"
+```
+
+推送代码到 Gitee 远程仓库
+
+```
+git push origin master
+```

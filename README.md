@@ -1,53 +1,57 @@
 # vue_shop
 
 ## Project setup
+
 ```
 npm install
 ```
 
 ### Compiles and hot-reloads for development
+
 ```
 npm run serve
 ```
 
 ### Compiles and minifies for production
+
 ```
 npm run build
 ```
 
 ### Lints and fixes files
+
 ```
 npm run lint
 ```
 
 ### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
 
+See [Configuration Reference](https://cli.vuejs.org/config/).
 
 # 记录
 
 1. 兄弟组件之间传值
 
-   在main.js 中声明一个 $bus
+   在 main.js 中声明一个 $bus
 
 ```代码块
 const bus = new Vue();  //main.js中声明一个 $bus
 Vue.prototype.$bus = bus  //挂在全局上
 ```
 
-​	在需要传值出去的组件中使用 $emit
+​ 在需要传值出去的组件中使用 $emit
 
 ```
 this.$bus.$emit('方法名称'，值)
 ```
 
-​	需要接受值的组件中使用 $on 方法操作 (生命周期上)
+​ 需要接受值的组件中使用 $on 方法操作 (生命周期上)
 
 ```
 this.$bus.$on ('方法名',值 =>{ 数据处理 或是调用方法 })
 ```
 
- 	使用完后在beforeDestroy 中销毁
+使用完后在 beforeDestroy 中销毁
 
 ```
 beforeDestroy(){
@@ -55,12 +59,13 @@ beforeDestroy(){
 }
 ```
 
-***
-## 2. 原生input  上传文件
+---
+
+## 2. 原生 input 上传文件
 
 ```
 <el-button  type="primary" icon="el-icon-plus">
-                            <input type="file"  id="avatar" name="avatar" multiple class="file-btn" required 
+                            <input type="file"  id="avatar" name="avatar" multiple class="file-btn" required
                                 @change="upload"/>添加质检文件
                         </el-button>
 
@@ -70,26 +75,29 @@ let file = document.getElementById("avatar");
 let fileList = file.files;  // 表示 fileList 对象集合  可获得二进制文件 用于上传操作
 
 ```
-## 3.base64转Blob
+
+## 3.base64 转 Blob
+
 ```
 //base64转Blob
 convertBase64UrlToBlob(urlData){
-  //去掉url的头，并转换为byte 
+  //去掉url的头，并转换为byte
   var split = urlData.split(',');
-  var bytes=window.atob(split[1]);        
-  //处理异常,将ascii码小于0的转换为大于0  
-  var ab = new ArrayBuffer(bytes.length);  
-  var ia = new Uint8Array(ab);  
-  for (var i = 0; i < bytes.length; i++) {  
-    ia[i] = bytes.charCodeAt(i);  
+  var bytes=window.atob(split[1]);
+  //处理异常,将ascii码小于0的转换为大于0
+  var ab = new ArrayBuffer(bytes.length);
+  var ia = new Uint8Array(ab);
+  for (var i = 0; i < bytes.length; i++) {
+    ia[i] = bytes.charCodeAt(i);
   }
-  return new Blob( [ab] , {type : split[0]});  
+  return new Blob( [ab] , {type : split[0]});
 },
 
 
 ```
 
 ## 4. 删除按钮 提示弹层
+
 ```
   //删除文件
   removeFileAudioFun(removeType,row){
@@ -106,7 +114,7 @@ convertBase64UrlToBlob(urlData){
           if (response.status === 200) {
             const { data: res, message, status } = response.data
             if (status !== 200) return this.message({ message: message, type: 'error' })
-            
+
             this.message({ message: message, type: 'success' })
             this.getAudioPictureFileListFun() //刷新文件列表
             }
@@ -115,16 +123,17 @@ convertBase64UrlToBlob(urlData){
         this.message({
           type: 'info',
           message: '已取消删除'
-        })       
+        })
       })
   }
 ```
 
 ## 5. 隐藏传参页面跳转
+
 ```
-    this.$router.push({  
+    this.$router.push({
             name: 'machinedepartment',  //路由声明
-            params:{  
+            params:{
               bm: bm,
               lb: lb,
               idcardnum:'',
@@ -134,7 +143,8 @@ convertBase64UrlToBlob(urlData){
 
 ```
 
-## 6.对象数组转化为多个数组  （根据对象中的某个特殊值做分类判断）
+## 6.对象数组转化为多个数组 （根据对象中的某个特殊值做分类判断）
+
 ```
 let arr = [
      { date: '2018-01-06',SW: '90.95', LL: '136', XXSW: '80.22',CKLL: '500' },
@@ -166,17 +176,9 @@ let arr = [
     })
 ```
 
-
-
-
-
 ## 2.局域网技术
 
- 	1. vue全家桶
- 	2. element-UI 交互界面
- 	3. 插件
-
-
-
-
-
+1. vue 全家桶
+2. element-UI 交互界面
+3. 插件
+4. mock.js 模拟数据

@@ -233,7 +233,7 @@
   export function queryRoleBtnsAll(menus) {
     let newBtns = []
     const rebuildData = (arr) => {
-      if (!arr) {
+      if (!arr || !Array.isArray(arr)) {
         return []
       }
       arr.forEach(v => {

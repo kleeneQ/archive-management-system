@@ -1,80 +1,80 @@
 import request from '@/utils/request'
 
 // 验证码
-export function getVerifyCode() {
+export function getVerifyCode () {
   return request.service({
-    url: '/prod-api/web/v1/user/verify-code/get',
+    url: '/web/v1/user/verify-code/get',
     method: 'get',
     responseType: 'arraybuffer'
   })
 }
 
 // 登录
-export function login(data) {
+export function login (data) {
   return request.service({
-    url: '/prod-api/v1/user/login',
+    url: '/v1/user/login',
     method: 'post',
     data
   })
 }
 
 // 用户信息
-export function getInfo() {
+export function getInfo () {
   return request.service({
-    url: '/prod-api/v1/user/get',
+    url: '/v1/user/get',
     method: 'post'
   })
 }
 
 // 用户信息列表
-export function getUsersList(data) {
+export function getUsersList (data) {
   return request.service({
-    url: '/prod-api/v1/user/list',
+    url: '/v1/user/list',
     method: 'post',
     data
   })
 }
 
 // 新增用户
-export function addUserFun(data) {
+export function addUserFun (data) {
   return request.service({
-    url: '/prod-api/v1/user/save',
+    url: '/v1/user/save',
     method: 'post',
     data
   })
 }
 
 // 用户 启用 1 / 禁用 0 / 删除 2
-export function userStatrChange(data) {
+export function userStatrChange (data) {
   return request.service({
-    url: '/prod-api/v1/user/forbid',
+    url: '/v1/user/forbid',
     method: 'post',
     data
   })
 }
 
 // 修改用户信息
-export function editUserInfo(data) {
+export function editUserInfo (data) {
   return request.service({
-    url: '/prod-api/v1/user/update',
+    url: '/v1/user/update',
     method: 'post',
     data
   })
 }
 
 // 修改密码
-export function modifyPwd(data) {
+export function modifyPwd (data) {
   return request.service({
-    url: '/prod-api/v1/user/change_password',
+    url: '/v1/user/change_password',
     method: 'post',
     data
   })
 }
 
 // 退出登录
-export function logout() {
+export function logout () {
   return request.service({
-    url: '/prod-api/v1/user/login_out',
+    url: '/v1/user/login_out',
     method: 'post'
   })
 }

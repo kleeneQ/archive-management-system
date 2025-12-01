@@ -2,16 +2,15 @@
   <el-container>
     <el-header style="position:absolute;width:100%;">
       <div class="logo">
-        <!-- <img class="long_img" src="../../assets/logo.png" alt=""> -->
-        <span>海口市城建档案管理系统</span>
+        <span>管理系统</span>
       </div>
       <div class="header-function">
-        <div class="personalCenter" @click="toPersonalCenter('/personalCenter')">
+        <div class="personalCenter" @click="toPersonalCenter">
           <i class="el-icon-user-solid">个人中心</i>
         </div>
         <el-dropdown class="avatar-container" trigger="click">
           <div class="avatar-wrapper">
-            <p class="messageNumber" v-if="messageNumber !== 0">{{messageNumber}}</p>
+            <p class="messageNumber" v-if="messageNumber > 0">{{messageNumber}}</p>
             <img :src="userInfo.user_avatar || ''" class="user-avatar">
             <i class="el-icon-caret-bottom btn" />
           </div>
@@ -19,8 +18,8 @@
             <el-dropdown-item @click.native="modifyPwd">
               <span>修改密码</span>
             </el-dropdown-item>
-            <el-dropdown-item @click.native="messagePageFun('/MessageListPage')">
-              <span class="NewmessageNumberbox">新消息<span class="NewmessageNumber"  v-if="messageNumber !== 0">{{messageNumber}}</span></span>
+            <el-dropdown-item @click.native="messagePageFun">
+              <span class="NewmessageNumberbox">新消息<span class="NewmessageNumber" v-if="messageNumber > 0">{{messageNumber}}</span></span>
             </el-dropdown-item>
             <el-dropdown-item divided @click.native="logout">
               <span>退出</span>
@@ -31,8 +30,10 @@
     </el-header>
     <el-container style="padding-top:60px;">
       <el-aside :width="isCollapse ? '64px' : '230px'">
-      <div class="toggle-button" @click="toggleCollapse"> |||</div>
-       
+        <div class="toggle-button" @click="toggleCollapse" :title="isCollapse ? '展开菜单' : '收起菜单'">
+          {{ isCollapse ? '>>' : '<<' }}
+        </div>
+
         <!-- 侧边栏菜单区域 -->
         <el-menu
           background-color="#0D2943"
@@ -47,34 +48,30 @@
           <el-menu-item index="/welcome" @click="saveNavState('/welcome')">
             <i class="el-icon-s-home" style="font-size:15px;"></i>
             <span slot="title">首页</span>
-              
           </el-menu-item>
-          
+
           <MenuTree :menuData="menuList" v-if="menuList.length > 0"></MenuTree>
-          <!-- <el-menu-item index="/personalCenter" @click="saveNavState('/personalCenter')">
-            <i class="el-icon-user-solid" style="font-size:15px;"></i>
-            <span slot="title">个人中心</span>
-          </el-menu-item> -->
         </el-menu>
-       
       </el-aside>
       <el-container>
-          <el-main>
-            <router-view></router-view>
-          </el-main>
-    <el-footer style="height:30px;">© 2021-{{toyear}} 天齐科技 v1.0.0</el-footer>
+        <el-main>
+          <router-view></router-view>
+        </el-main>
+        <el-footer style="height:30px;">© 2021-{{toyear}} 天齐科技 v1.0.0</el-footer>
       </el-container>
-
     </el-container>
 
     <!-- 修改密码弹层 -->
-    <el-dialog title="修改密码" width="50%" :visible.sync="dialogFormVisible" @close="modifyDialogClosed">
+    <el-dialog title="修改密码" width="40%" :visible.sync="dialogFormVisible" @close="modifyDialogClosed" center>
       <el-form :model="password" label-width="70px" ref="modifyFormRef" :rules="operationUserPwdFormRules">
         <el-form-item label="原密码" :label-width="formLabelWidth" prop="oldPwd">
-          <el-input v-model="password.oldPwd" type="password" autocomplete="off"></el-input>
+          <el-input v-model="password.oldPwd" type="password" autocomplete="off" show-password placeholder="请输入原密码"></el-input>
         </el-form-item>
         <el-form-item label="新密码" :label-width="formLabelWidth" prop="newPwd">
-          <el-input v-model="password.newPwd" type="password" autocomplete="off"></el-input>
+          <el-input v-model="password.newPwd" type="password" autocomplete="off" show-password placeholder="请输入新密码"></el-input>
+        </el-form-item>
+        <el-form-item label="确认密码" :label-width="formLabelWidth" prop="confirmPwd">
+          <el-input v-model="password.confirmPwd" type="password" autocomplete="off" show-password placeholder="请再次输入新密码"></el-input>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -89,17 +86,12 @@
 import { removeToken } from '@/utils/auth'
 import { queryRoleBtnsAll } from '@/utils/index'
 import { getInfo, modifyPwd } from '@/api/user'
-import { getRoleMenu } from '@/api/role'
-import { 
-  fetchUserMenuList,
-  getMessageList,
-  getMessageUpdateStatus,
-
-  } from '@/api/systemmange'
+import { fetchUserMenuList, getMessageList } from '@/api/systemmange'
 import MenuTree from "./Menu/MenuTree"
+
 export default {
   components: {
-    MenuTree: MenuTree
+    MenuTree
   },
   data() {
     return {
@@ -108,163 +100,206 @@ export default {
       isCollapse: false,
       activePath: '',
       dialogFormVisible: false,
-      password: {},
+      password: {
+        oldPwd: '',
+        newPwd: '',
+        confirmPwd: ''
+      },
       formLabelWidth: '120px',
-      // 修改用户密码验证规则
-      operationUserPwdFormRules: {
+      toyear: new Date().getFullYear(),
+      messageNumber: 0 //站内消息列表数量
+    }
+  },
+  // 修改用户密码验证规则
+  computed: {
+    operationUserPwdFormRules() {
+      const validatePass = (rule, value, callback) => {
+        if (value === '') {
+          callback(new Error('请输入密码'))
+        } else if (value.length < 6) {
+          callback(new Error('密码长度不能小于6位'))
+        } else {
+          callback()
+        }
+      }
+
+      const validateConfirmPass = (rule, value, callback) => {
+        if (value === '') {
+          callback(new Error('请再次输入密码'))
+        } else if (value !== this.password.newPwd) {
+          callback(new Error('两次输入的密码不一致'))
+        } else {
+          callback()
+        }
+      }
+
+      return {
         oldPwd: [
-          { required: true, message: '请输入旧密码', trigger: 'blur' }
+          { required: true, validator: validatePass, trigger: 'blur' }
         ],
         newPwd: [
-          { required: true, message: '请输入新密码', trigger: 'blur' }
+          { required: true, validator: validatePass, trigger: 'blur' }
+        ],
+        confirmPwd: [
+          { required: true, validator: validateConfirmPass, trigger: 'blur' }
         ]
-      },
-      toyear:'',
-      messageNumber:0, //站内 消息列表数量
+      }
     }
   },
   created() {
     this.getUserInfo()
-    // this.getMenuList()
-    if (window.sessionStorage.getItem('activePath') !== null) {
-      this.activePath = window.sessionStorage.getItem('activePath')
-    } else {
-      this.activePath = '/welcome'
-    }
-    
+
+    // 从sessionStorage中恢复激活的路由路径
+    const savedActivePath = window.sessionStorage.getItem('activePath')
+    this.activePath = savedActivePath || '/welcome'
+
     this.getMessageListFun()
   },
   watch: {
-	$route(to, from){
-    this.getMessageListFun()
-	}
-},
+    $route: {
+      handler() {
+        this.getMessageListFun()
+      },
+      immediate: false
+    }
+  },
   mounted(){
-    // this.refreshData = setInterval(() => {
-    //    this.getMessageListFun()
-    //   }, 30000)
-     this.$bus.$on("getMessageListFun", num => { //此处的num是接收的值
+    // 监听全局消息刷新事件
+    this.$bus.$on("getMessageListFun", () => {
       this.getMessageListFun()
     })
-    let date = new Date();
-    this.toyear = date.getFullYear();
+  },
+
+  beforeDestroy() {
+    // 清理事件监听器，防止内存泄漏
+    this.$bus.$off("getMessageListFun")
   },
   methods: {
-    
-    //公共基础接口 - 修改站内信状态为已读
-    getMessageUpdateStatusFun(){
-      const q ={
-        message_id:"",
-      }
-      getMessageUpdateStatus(q).then(response =>{
-       if (response.status === 200) {
-        const { data: res, message, status } = response.data
-        if (status !== 200) return this.message({ message: message, type: 'error' })
-        }
-      })
-    },
     //跳转到新消息列表页面
-    messagePageFun(val){
-      this.$router.push({ path: val }).catch(()=>{})
+    messagePageFun(){
+      this.$router.push({ path: '/MessageListPage' }).catch(()=>{})
     },
+
     // 公共基础接口 - 站内信列表
     getMessageListFun(){
       const q ={
-        page_num:"1",
-        page_size:'100',
+        page_num: "1",
+        page_size: '100',
       }
-      getMessageList(q).then(response =>{
-       if (response.status === 200) {
-        const { data: res, message, status } = response.data
-        if (status !== 200) return this.message({ message: message, type: 'error' })
-         let num = 0
-         res.list.forEach(item =>{
-           if (item.message_is_read == 0) {
-             num = num + 1
-           }
-         })
-         this.messageNumber = num
 
+      getMessageList(q).then(response => {
+        if (response && response.status === 200) {
+          const { data: res, message, status } = response.data
+          if (status !== 200) {
+            this.$message({ message: message || '获取消息列表失败', type: 'error' })
+            return
+          }
+
+          // 优化未读消息统计方式，添加安全检查
+          this.messageNumber = res.list && Array.isArray(res.list) ? res.list.filter(item => item.message_is_read === 0).length : 0
         }
+      }).catch(error => {
+        console.error('获取消息列表失败:', error)
+        this.$message({ message: '获取消息列表失败', type: 'error' })
       })
     },
     // 获取用户信息
     getUserInfo() {
       getInfo().then(response => {
-        if (response.status === 200) {
+        if (response && response.status === 200) {
           const { data: res } = response
-          if (res.status !== 200) return this.message({ message: res.message, type: 'error' })
-          if (res.data.user_avatar == null) {
-            res.data.user_avatar = ''
+          if (res && res.status !== 200) {
+            this.$message({ message: res.message || '获取用户信息失败', type: 'error' })
+            return
           }
-          this.userInfo = res.data
 
-          // 根据角色id获取角色菜单
-          this.getRoleMenu(this.userInfo.user_role[0].role_id)
+          // 设置默认头像
+          if (res.data) {
+            res.data.user_avatar = res.data.user_avatar || ''
+            this.userInfo = res.data
+
+            // 根据角色id获取角色菜单
+            if (res.data.data.user_role && res.data.data.user_role.length > 0) {
+              this.getRoleMenu(res.data.data.user_role[0].role_id)
+            } else {
+              console.warn('用户没有分配角色权限')
+            }
+          }
         }
       }).catch(err => {
-        console.log(err)
+        console.error('获取用户信息失败:', err)
+        this.$message({ message: '获取用户信息失败', type: 'error' })
       })
     },
 
-    // 获取角色菜单  侧边栏菜单
+    // 获取角色菜单 侧边栏菜单
     getRoleMenu(roleId) {
+      if (!roleId) return
+
       const q = {
         role_id: roleId
       }
+
       fetchUserMenuList(q).then(response => {
-        if (response.status === 200) {
+        if (response && response.status === 200) {
           const { status, message, data: res } = response.data
-          const menuList = this.filterMenuHandle(res)
-          this.menuList = menuList[0].child
-          const buttons = queryRoleBtnsAll(res)
-          this.$store.dispatch('user/save', buttons)
-          
+
+          if (status !== 200) {
+            this.$message({ message: message || '获取菜单失败', type: 'error' })
+            return
+          }
+
+          try {
+            const menuList = this.filterMenuHandle(res.data)
+            this.menuList = menuList && menuList.length > 0 && menuList[0].child ? menuList[0].child : []
+
+            // 获取按钮权限并存储
+            const buttons = queryRoleBtnsAll(res)
+            this.$store.dispatch('user/save', buttons)
+          } catch (err) {
+            console.error('处理菜单数据失败:', err)
+            this.menuList = []
+          }
         }
       }).catch(error => {
-        console.log(error)
+        console.error('获取菜单列表失败:', error)
+        this.$message({ message: '获取菜单列表失败', type: 'error' })
       })
     },
 
     // 登出
     logout() {
-      const _this = this
-      _this.confirm('此操作将退出登录, 是否继续?', '提示', {
+      this.$confirm('此操作将退出登录, 是否继续?', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
       }).then(() => {
         removeToken()
         window.sessionStorage.clear()
-        _this.$router.push('/login')
-        _this.message({
+
+        // 登出后跳转到登录页
+        this.$router.replace('/login').catch(() => {})
+
+        this.$message({
           type: 'success',
           message: '退出成功!'
         })
       }).catch(() => {
-        _this.message({
+        this.$message({
           type: 'info',
           message: '已取消'
         })
       })
     },
-    // 获取左侧菜单
-    getMenuList() {
-      fetchUserMenuList().then(response => {
-        const { data: res } = response
-        if (res.status !== 200) return this.message({ message: res.message, type: 'error' })
-        const menuList = this.filterMenuHandle(res.data)
-        this.menuList = menuList[0].child
-      })
-    },
 
+    // 过滤菜单处理
     filterMenuHandle(allMenuList) {
       const rebuildData = (arr) => {
-        if (!arr) {
+        if (!Array.isArray(arr)) {
           return []
         }
-        let newarr = []
-        arr.forEach(element => {
+
+        return arr.map(element => {
           const obj = {
             name: element.menuName,
             path: element.menuWebUrl,
@@ -272,62 +307,99 @@ export default {
             id: element.menuId,
             level: element.menuParentLevel
           }
+
+          // 仅对3级以下菜单进行子菜单处理
           if (element.child && element.menuParentLevel < 3) {
             obj.child = rebuildData(element.child)
-            newarr.push(obj)
           }
-        })
-        return newarr
+
+          return obj
+        }).filter(Boolean) // 过滤掉无效项
       }
+
       return rebuildData(allMenuList)
     },
-    // 展開收起側邊欄
+    // 展开收起侧边栏
     toggleCollapse() {
       this.isCollapse = !this.isCollapse
+      // 可以添加动画效果或其他逻辑
     },
+
     // 保存激活的链接地址
     saveNavState(activePath) {
-      this.getMessageListFun() //页面跳转时 刷新 信息栏数据
-      window.sessionStorage.setItem('activePath', activePath)
-      this.activePath = activePath
+      if (activePath) {
+        // 页面跳转时刷新信息栏数据
+        this.getMessageListFun()
+        // 保存到sessionStorage
+        window.sessionStorage.setItem('activePath', activePath)
+        this.activePath = activePath
+      }
     },
 
     // 修改密码
     modifyPwd() {
-      this.dialogFormVisible = true
+      // 重置表单后再打开弹窗
+      this.$nextTick(() => {
+        if (this.$refs.modifyFormRef) {
+          this.$refs.modifyFormRef.resetFields()
+        }
+        this.dialogFormVisible = true
+      })
     },
 
+    // 弹窗关闭时重置表单
     modifyDialogClosed() {
-      this.$refs.modifyFormRef.resetFields()
+      this.$nextTick(() => {
+        if (this.$refs.modifyFormRef) {
+          this.$refs.modifyFormRef.resetFields()
+        }
+      })
     },
 
     // 确定修改密码
     submitForm() {
-      const q = {}
-      q.pre_password = this.$md5(this.password.oldPwd)
-      q.user_password = this.$md5(this.password.newPwd)
       this.$refs.modifyFormRef.validate(valid => {
         if (!valid) return false
-        modifyPwd(q).then(response => {
-          if (response.status === 200) {
+
+        const params = {
+          pre_password: this.$md5(this.password.oldPwd),
+          user_password: this.$md5(this.password.newPwd)
+        }
+
+        modifyPwd(params).then(response => {
+          if (response && response.status === 200) {
             const { data: res } = response
-            if (res.status !== 200) return this.message({ message: res.message, type: 'error' })
-            this.message({ message: res.message, type: 'success' })
+            if (res && res.status !== 200) {
+              this.$message({ message: res.message || '修改密码失败', type: 'error' })
+              return
+            }
+
+            this.$message({ message: res.message || '修改密码成功', type: 'success' })
             this.dialogFormVisible = false
-            this.$router.push({ path: '/' })
-            var storage = window.localStorage
-            storage.clear()
+
+            // 密码修改成功后退出登录
+            this.$confirm('密码修改成功，请重新登录', '提示', {
+              confirmButtonText: '确定',
+              showCancelButton: false,
+              type: 'info'
+            }).then(() => {
+              // 清除本地存储并跳转登录页
+              window.localStorage.clear()
+              this.$router.replace('/login').catch(() => {})
+            })
           }
         }).catch(error => {
-          console.log(error)
+          console.error('修改密码失败:', error)
+          this.$message({ message: '修改密码失败，请重试', type: 'error' })
         })
       })
     },
 
     // 去个人中心
-    toPersonalCenter(url) {
+    toPersonalCenter() {
+      this.$router.push({ path: '/personalCenter' }).catch(() => {})
     }
-  },
+  }
 }
 </script>
 
@@ -414,7 +486,7 @@ export default {
           background-image: url('../../../src/assets/tx.png') ;
           background-size: 100% 100%;
         }
-  
+
         .btn {
           cursor: pointer;
           position: absolute;

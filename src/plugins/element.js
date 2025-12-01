@@ -110,5 +110,5 @@ Vue.use(Progress)
 Vue.use(Slider)
 
 // Message组件必须挂载到原型对象上
-Vue.prototype.message = Message
-Vue.prototype.confirm = MessageBox.confirm
+Vue.prototype.$message = Message
+Vue.prototype.$confirm = MessageBox.confirm

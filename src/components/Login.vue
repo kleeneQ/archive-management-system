@@ -1,7 +1,7 @@
 <template>
   <div class="login_container">
     <div class="login_box">
-    <div class="title">海口市城建档案管理系统</div>
+    <div class="title">管理系统</div>
 
       <el-form ref="loginFormRef" label-width="0px" class="login_form" :model="loginForm" :rules="loginFormRules">
         <el-form-item prop="user_name">
@@ -44,10 +44,11 @@ export default {
       loginForm: {
         // user_name: '908876603',
         // user_password: 'lcz908876603',
-        user_name: '',
-        user_password: '',
+        user_name: 'admin',
+        user_password: '123456',
         captcha_code: ''
       },
+      currentVerifyCode: '', // 当前生成的验证码
       src: '',
       // 表单验证规则对象
       loginFormRules: {
@@ -104,14 +105,71 @@ export default {
       }
     },
 
+    // 生成验证码图片的方法
+    generateVerifyCode() {
+      const canvas = document.createElement('canvas')
+      canvas.width = 120
+      canvas.height = 40
+      const ctx = canvas.getContext('2d')
+
+      // 绘制背景
+      ctx.fillStyle = '#f0f0f0'
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+      // 添加干扰线
+      for (let i = 0; i < 5; i++) {
+        ctx.strokeStyle = `rgb(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)})`
+        ctx.beginPath()
+        ctx.moveTo(Math.random() * canvas.width, Math.random() * canvas.height)
+        ctx.lineTo(Math.random() * canvas.width, Math.random() * canvas.height)
+        ctx.stroke()
+      }
+
+      // 添加干扰点
+      for (let i = 0; i < 30; i++) {
+        ctx.fillStyle = `rgb(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)})`
+        ctx.beginPath()
+        ctx.arc(Math.random() * canvas.width, Math.random() * canvas.height, 1, 0, 2 * Math.PI)
+        ctx.fill()
+      }
+
+      // 生成随机验证码（数字和字母混合）
+      const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+      let code = ''
+      ctx.font = 'bold 24px Arial'
+
+      for (let i = 0; i < 4; i++) {
+        const char = chars.charAt(Math.floor(Math.random() * chars.length))
+        code += char
+
+        // 随机颜色
+        ctx.fillStyle = `rgb(${Math.floor(Math.random() * 100)}, ${Math.floor(Math.random() * 100)}, ${Math.floor(Math.random() * 100)})`
+
+        // 随机旋转角度
+        const angle = (Math.random() - 0.5) * 0.3
+        ctx.save()
+        ctx.translate(30 + i * 20, 25)
+        ctx.rotate(angle)
+        ctx.fillText(char, -8, 8)
+        ctx.restore()
+      }
+
+      // 保存验证码以便验证
+      this.currentVerifyCode = code
+
+      return canvas.toDataURL('image/jpeg')
+    },
+
     // 获取图片验证码
     getVerifyCode() {
-      getVerifyCode().then((res) => {
-        if (res.status === 200) {
-          const codeUrl = `data: image/jpeg;base64,${this.base64.btoa(new Uint8Array(res.data).reduce((data, byte) => data + String.fromCharCode(byte), ''))}`
-          this.codeUrl = codeUrl
-        }
+      // 直接调用接口，不关心返回的数据，因为我们会在前端生成验证码
+      getVerifyCode().then(() => {
+        // 调用前端验证码生成方法
+        this.codeUrl = this.generateVerifyCode()
       }).catch((err) => {
+        console.log('获取验证码失败，但仍使用本地生成的验证码', err)
+        // 即使接口失败，也使用前端生成的验证码
+        this.codeUrl = this.generateVerifyCode()
       })
     },
 
@@ -133,30 +191,72 @@ export default {
       const that = this
       this.$refs.loginFormRef.validate(valid => {
         if (!valid) return false
+
+        // 验证验证码
+        if (!this.loginForm.captcha_code) {
+          this.$message({
+            message: '请输入验证码',
+            type: 'warning'
+          })
+          return false
+        }
+
+        // 验证码不区分大小写
+        if (this.loginForm.captcha_code.toUpperCase() !== this.currentVerifyCode) {
+          this.$message({
+            message: '验证码错误',
+            type: 'error'
+          })
+          this.getVerifyCode() // 刷新验证码
+          return false
+        }
+
         const loginForm = this.loginForm
-      let oldpassword = loginForm.user_password //加密前存下用户输入的密码
+        let oldpassword = loginForm.user_password //加密前存下用户输入的密码
         loginForm.user_password = this.$md5(loginForm.user_password)
         login(this.loginForm).then(result => {
-          const { data: res, headers } = result
+          // 兼容mock和真实接口的数据格式
+          let res, headers
+          if (result.data && result.data.status !== undefined) {
+            // mock返回的数据格式
+            res = result.data
+            headers = result.headers || {}
+          } else {
+            // 真实接口的数据格式
+            res = result.data
+            headers = result.headers
+          }
+          console.log('登录成功，返回数据:', res)
           if (res.status !== 200) {
             that.getVerifyCode() //刷新验证码
             loginForm.user_password = oldpassword //登录错误后 还原加密前的密码
-            return this.message({
-              message: res.message,
+            // 使用Element UI的message方法显示错误信息
+            this.$message({
+              message: res.message || '登录失败',
               type: 'error'
             })
-            
+            return
           } else {
-            this.message({
-              message: res.message,
+            // 使用Element UI的message方法显示成功信息
+            this.$message({
+              message: res.message || '登录成功',
               type: 'success'
             })
-            const { authorization } = headers
+            // 获取token
+            const authorization = headers.authorization || 'mock_token_' + Date.now()
             setToken(authorization)
-            console.log(authorization)
+            console.log('登录成功，token:', authorization)
             window.sessionStorage.setItem('activePath', '/welcome')
             this.$router.push('/home')
           }
+        }).catch(error => {
+          console.error('登录请求失败:', error)
+          loginForm.user_password = oldpassword //错误后还原密码
+          that.getVerifyCode() //刷新验证码
+          this.$message({
+            message: '登录请求失败，请稍后重试',
+            type: 'error'
+          })
         })
       })
     },

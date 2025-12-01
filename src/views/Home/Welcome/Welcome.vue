@@ -1,6 +1,6 @@
 <template>
   <div class='welcome'>
-    <div class="text eff">欢迎使用海口市城建档案管理系统</div>
+    <div class="text eff">欢迎使用管理系统</div>
   </div>
 </template>
 
@@ -26,19 +26,19 @@ export default {
   // type your function
   },
   created () {
-    
+
   },
   mounted () {
-    
+
   },
   updated () {
-    
+
   },
   destroyed () {
-    
+
   },
   filters: {
-    
+
   },
 }
 </script>

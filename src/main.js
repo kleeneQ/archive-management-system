@@ -80,6 +80,12 @@ import { Base64 } from 'js-base64'
 Vue.prototype.$md5 = md5
 Vue.prototype.base64 = Base64
 
+// 引入mock数据（仅在开发环境下使用）
+if (process.env.NODE_ENV === 'development') {
+  // 使用同步导入确保mock能够正确拦截请求
+  require('./mock/index.js')
+}
+
 // 进行全局注册富文本编辑器
 Vue.use(VueQuillEditor)
 Vue.use(Fragment.Plugin)

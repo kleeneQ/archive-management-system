@@ -29,6 +29,13 @@ module.exports = {
   assetsDir: 'static',
   lintOnSave: false,
   productionSourceMap: false,
+  // Add this output configuration to fix the contenthash issue
+  configureWebpack: {
+    output: {
+      filename: 'static/js/[name].[chunkhash:8].js',
+      chunkFilename: 'static/js/[name].[chunkhash:8].js'
+    }
+  },
   devServer: {
     host: '0.0.0.0',
     port: port,
@@ -137,3 +144,4 @@ module.exports = {
     }])
   }
 }
+

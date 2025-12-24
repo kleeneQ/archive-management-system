@@ -81,7 +81,7 @@ Mock.mock('/dev-api/v1/user/get', 'post', () => {
   }
 })
 
-// 模拟获取用户菜单列表接口
+// 模拟获取用户菜单列表
 Mock.mock('/dev-api/v1/menu/list/side', 'post', (options) => {
   // 模拟菜单数据结构
   const mockMenuList = [

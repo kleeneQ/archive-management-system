@@ -3,7 +3,7 @@
     <el-breadcrumb separator-class="el-icon-arrow-right">
       <el-breadcrumb-item :to="{ path: '/home' }">首页</el-breadcrumb-item>
       <el-breadcrumb-item>系统管理</el-breadcrumb-item>
-      <el-breadcrumb-item>账号管理</el-breadcrumb-item>
+      <el-breadcrumb-item>用户管理</el-breadcrumb-item>
     </el-breadcrumb>
     <el-card>
       <el-row>
@@ -12,8 +12,8 @@
             <el-form-item label="账户">
               <el-input clearable v-model="queryInfo.user_name" placeholder="请输入账户"></el-input>
             </el-form-item>
-            <el-form-item label="账号状态">
-              <el-select clearable v-model="queryInfo.user_forbid" placeholder="请选择账号状态">
+            <el-form-item label="用户状态">
+              <el-select clearable v-model="queryInfo.user_forbid" placeholder="请选择用户状态">
                 <el-option label="启用" value="0"></el-option>
                 <el-option label="禁用" value="1"></el-option>
               </el-select>
@@ -30,14 +30,13 @@
         </el-col>
         <el-col :span="4">
           <div class="btn-box">
-            <el-button size="mini" type="primary" v-if="hasPerms('/v1/user/save')" @click="handleShowAddDialog">添加账号</el-button>
+            <el-button size="mini" type="primary" @click="handleShowAddDialog">添加用户</el-button>
           </div>
-    
+
         </el-col>
       </el-row>
       <!-- 用户列表区域 -->
       <el-table
-        v-if="hasPerms('/v1/user/list')"
         :data="usersList"
         stripe
         border
@@ -57,7 +56,7 @@
             <el-tag v-for="(item, i) in scope.row.user_role" :key="i">{{ item.role_name }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="账号状态" width="100">
+        <el-table-column label="用户状态" width="100">
           <!-- 作用域插槽 -->
           <template slot-scope="scope">
             <el-switch :disabled="!hasPerms('/v1/user/forbid')" :active-value="1" :inactive-value="0" v-model="scope.row.user_forbid" @change="userStateChange(scope.row)"></el-switch>
@@ -67,12 +66,11 @@
         <el-table-column prop="user_create_time" label="提交时间"></el-table-column>
         <el-table-column label="操作">
           <template slot-scope="scope">
-            <div class="btn edit" v-if="hasPerms('/v1/user/update')">
+            <div class="btn edit">
               <el-button type="primary" icon="el-icon-edit" size="mini" @click="showDialogEdit(scope.row)"></el-button>
-         
             </div>
             <!-- 删除用户 -->
-            <div class="btn delete" v-if="hasPerms('/v1/user/forbid')">
+            <div class="btn delete">
               <el-button type="danger" icon="el-icon-delete" size="mini" @click="removeUserById(scope.row.user_id)"></el-button>
             </div>
           </template>
@@ -91,7 +89,7 @@
       >
       </el-pagination>
     </el-card>
-    
+
       <!-- 添加用户的对话框 -->
           <el-dialog
             title="添加新用户"
@@ -133,7 +131,7 @@
                   <i v-else class="el-icon-plus avatar-uploader-icon"></i>
                 </el-upload>
               </el-form-item>
-              <el-form-item label="角色" prop="user_role_id">
+              <!-- <el-form-item label="角色" prop="user_role_id">
                 <el-select v-model="addUserForm.user_role_id" placeholder="请选择角色">
                   <el-option
                     v-for="item in rolesList"
@@ -142,7 +140,7 @@
                     :value="item.role_id">
                   </el-option>
                 </el-select>
-              </el-form-item>
+              </el-form-item> -->
             </el-form>
             <div slot="footer" class="dialog-footer">
               <el-button @click="addDialogVisible = false">取 消</el-button>
@@ -241,7 +239,7 @@ export default {
         user_email: '',
         user_avatar: '',
         user_role_id: '',
-        
+
       },
       // 角色列表数据
       rolesList: [],
@@ -279,9 +277,9 @@ export default {
   methods: {
     getUsersInfo() {
       getUsersList(this.queryInfo).then(response => {
-        
+        console.log(response)
         if (response.status === 200) {
-          const { data, message, status } = response.data
+          const { data, message, status } = response.data.data
           if (status !== 200) return this.message({ message: message, type: 'error' })
           this.usersList = data.list
           this.pageCount = Math.ceil(data.total / data.pageSize)
@@ -363,8 +361,8 @@ export default {
         addUserFun(this.addUserForm).then(response => {
           if (response.status === 200) {
             const { data: res } = response
-            if (res.status !== 200) return this.message({ message: res.message, type: 'error' })
-            this.message({ message: res.message, type: 'success' })
+            if (res.status !== 200) return this.$message({ message: res.message, type: 'error' })
+            this.$message({ message: res.message, type: 'success' })
             this.addDialogVisible = false
             this.getUsersInfo()
           }
@@ -453,14 +451,14 @@ export default {
         this.message({
           type: 'info',
           message: '已取消删除'
-        })       
+        })
       })
     },
 
     // 获取角色下拉列表
     getRoleDropList() {
       getRoleDropList().then(response => {
-        // 
+        //
         if (response.status === 200) {
           const { data, message, status } = response.data
           if (status !== 200) return this.message({ message: message, type: 'error' })
